@@ -4,7 +4,7 @@
 #include "vec3.h"
 #endif
 
-#define vec4(type) struct { type x; type y; type z; type w; }
+#define vec4(type) union { struct { type x; type y; type z; type w; }; type index[4]; }
 #define vec4_add(a,b) { (a).x += (b).x; (a).y += (b).y; (a).z += (b).z; (a).w += (b).w; }
 #define vec4_subtract(a,b) { (a).x -= (b).x; (a).y -= (b).y; (a).z -= (b).z; (a).w -= (b).w; }
 #define vec4_scale(a,s) { (a).x *= s; (a).y *= s; (a).z *= s; (a).w *= s; }

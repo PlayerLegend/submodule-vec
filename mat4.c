@@ -9,20 +9,19 @@
 #include "mat4.h"
 #include "../log/log.h"
 
-void apply_translation (mat4 input, fvec3 * tl)
+/*void apply_translation (mat4 input, fvec3 * tl)
 {
 #define tl_matrix_unwrap(row) input[12 + row] = input[0 + row]*tl->x + input[4 + row]*tl->y + input[8 + row]*tl->z + input[12 + row];
     tl_matrix_unwrap(0);
     tl_matrix_unwrap(1);
     tl_matrix_unwrap(2);
     tl_matrix_unwrap(3);
-}
+    }*/
 
 keyargs_define(mat4_setup_rotation_matrix)
 {
     // https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
-    
-    
+     
     float s = 1 / (+ args.quaternion->x * args.quaternion->x
 		   + args.quaternion->y * args.quaternion->y
 		   + args.quaternion->z * args.quaternion->z
@@ -32,25 +31,36 @@ keyargs_define(mat4_setup_rotation_matrix)
     
     float s2 = 2 * s;
 
-    (*args.result)[0]  = 1 - s2 * (args.quaternion->y * args.quaternion->y + args.quaternion->z * args.quaternion->z);
-    (*args.result)[1]  = s2 * (args.quaternion->x * args.quaternion->y + args.quaternion->z * args.quaternion->w);
-    (*args.result)[2]  = s2 * (args.quaternion->x * args.quaternion->z - args.quaternion->y * args.quaternion->w);
-    (*args.result)[3]  = 0;
-
-    (*args.result)[4]  = s2 * (args.quaternion->x * args.quaternion->y - args.quaternion->z * args.quaternion->w);
-    (*args.result)[5]  = 1 - s2 * (args.quaternion->x * args.quaternion->x + args.quaternion->z * args.quaternion->z);
-    (*args.result)[6]  = s2 * (args.quaternion->y * args.quaternion->z + args.quaternion->x * args.quaternion->w);
-    (*args.result)[7]  = 0;
+    *args.result = (mat4){
+	.column = {
+	    {
+		.x  = 1 - s2 * (args.quaternion->y * args.quaternion->y + args.quaternion->z * args.quaternion->z),
+		.y  = s2 * (args.quaternion->x * args.quaternion->y + args.quaternion->z * args.quaternion->w),
+		.z  = s2 * (args.quaternion->x * args.quaternion->z - args.quaternion->y * args.quaternion->w),
+		.w  = 0,
+	    },
+	    {
+		.x  = s2 * (args.quaternion->x * args.quaternion->y - args.quaternion->z * args.quaternion->w),
+		.y  = 1 - s2 * (args.quaternion->x * args.quaternion->x + args.quaternion->z * args.quaternion->z),
+		.z  = s2 * (args.quaternion->y * args.quaternion->z + args.quaternion->x * args.quaternion->w),
+		.w  = 0,
+	    },
+	    {
+		.x  = s2 * (args.quaternion->x * args.quaternion->z + args.quaternion->y * args.quaternion->w),
+		.y  = s2 * (args.quaternion->y * args.quaternion->z - args.quaternion->x * args.quaternion->w),
+		.z = 1 - s2 * (args.quaternion->x * args.quaternion->x + args.quaternion->y * args.quaternion->y),
+		.w = 0,
+	    },
+	    {
+		.x = 0,
+		.y = 0,
+		.z = 0,
+		.w = 1,
+	    },
+	},
+    };
     
-    (*args.result)[8]  = s2 * (args.quaternion->x * args.quaternion->z + args.quaternion->y * args.quaternion->w);
-    (*args.result)[9]  = s2 * (args.quaternion->y * args.quaternion->z - args.quaternion->x * args.quaternion->w);
-    (*args.result)[10] = 1 - s2 * (args.quaternion->x * args.quaternion->x + args.quaternion->y * args.quaternion->y);
-    (*args.result)[11] = 0;
-
-    (*args.result)[12] = 0;
-    (*args.result)[13] = 0;
-    (*args.result)[14] = 0;
-    (*args.result)[15] = 1;
+    
 
     /*
     mat4 a;
@@ -125,71 +135,58 @@ keyargs_define(mat4_setup_projection_matrix)
     float f = args.fovy / 2;
     f = cos (f) / sin (f);
 
-    (*args.result)[0] = f / args.aspect;
-    (*args.result)[1] = 0;
-    (*args.result)[2] = 0;
-    (*args.result)[3] = 0;
-
-    (*args.result)[4] = 0;
-    (*args.result)[5] = f;
-    (*args.result)[6] = 0;
-    (*args.result)[7] = 0;
-
-    (*args.result)[8] = 0;
-    (*args.result)[9] = 0;
-    (*args.result)[10] = (args.far + args.near) / (args.near - args.far);
-    (*args.result)[11] = -1;
-
-    (*args.result)[12] = 0;
-    (*args.result)[13] = 0;
-    (*args.result)[14] = (2 * args.far * args.near) / (args.near - args.far);
-    (*args.result)[15] = 0;
+    *args.result = (mat4)
+	{
+	    .column =
+	    {
+		{
+		    .x = f / args.aspect,
+		},
+		{
+		    .y = f,
+		},
+		{
+		    .z = (args.far + args.near) / (args.near - args.far),
+		    .w = -1,
+		},
+		{
+		    .z = (2 * args.far * args.near) / (args.near - args.far),
+		},
+	    }
+	};
 }
 
 keyargs_define(mat4_setup_translation_matrix)
 {
-    (*args.result)[0] = 1;
-    (*args.result)[1] = 0;
-    (*args.result)[2] = 0;
-    (*args.result)[3] = 0;
-
-    (*args.result)[4] = 0;
-    (*args.result)[5] = 1;
-    (*args.result)[6] = 0;
-    (*args.result)[7] = 0;
-
-    (*args.result)[8] = 0;
-    (*args.result)[9] = 0;
-    (*args.result)[10] = 1;
-    (*args.result)[11] = 0;
-
-    (*args.result)[12] = args.translation.x;
-    (*args.result)[13] = args.translation.y;
-    (*args.result)[14] = args.translation.z;
-    (*args.result)[15] = 1;
+    *args.result = (mat4)
+    {
+	.column =
+	{
+	    { .x = 1 },
+	    { .y = 1 },
+	    { .z = 1 },
+	    {
+		.x = args.translation.x,
+		.y = args.translation.y,
+		.z = args.translation.z,
+		.w = 1,
+	    }
+	}
+    };
 }
 
 keyargs_define(mat4_setup_scale_matrix)
 {
-    (*args.result)[0] = args.scale.x;
-    (*args.result)[1] = 0;
-    (*args.result)[2] = 0;
-    (*args.result)[3] = 0;
-
-    (*args.result)[4] = 0;
-    (*args.result)[5] = args.scale.y;
-    (*args.result)[6] = 0;
-    (*args.result)[7] = 0;
-
-    (*args.result)[8] = 0;
-    (*args.result)[9] = 0;
-    (*args.result)[10] = args.scale.z;
-    (*args.result)[11] = 0;
-
-    (*args.result)[12] = 0;
-    (*args.result)[13] = 0;
-    (*args.result)[14] = 0;
-    (*args.result)[15] = 1;
+    *args.result = (mat4)
+    {
+	.column =
+	{
+	    { .x = args.scale.x },
+	    { .y = args.scale.y },
+	    { .z = args.scale.z },
+	    { .w = 1 },
+	},
+    };
 }
 
 /*keyargs_define(mat4_setup_transform_matrix)
@@ -210,68 +207,54 @@ keyargs_define(mat4_setup_scale_matrix)
     mat4_multiply (args.result, &a, &b);
     }*/
 
-void mat4_init_identity (mat4 mat)
+/*inline static float matrix_multiply_dot (int row_index, int col_index, const mat4 * a, const mat4 * b)
 {
-    mat[0] = 1;
-    mat[1] = 0;
-    mat[2] = 0;
-    mat[3] = 0;
+    return
+	+ a->column[0].index[row_index] * b->column[col_index].x
+	+ a->column[1].index[row_index] * b->column[col_index].y
+	+ a->column[2].index[row_index] * b->column[col_index].z
+	+ a->column[3].index[row_index] * b->column[col_index].w;
     
-    mat[4] = 0;
-    mat[5] = 1;
-    mat[6] = 0;
-    mat[7] = 0;
-    
-    mat[8] = 0;
-    mat[9] = 0;
-    mat[10] = 1;
-    mat[11] = 0;
-    
-    mat[12] = 0;
-    mat[13] = 0;
-    mat[14] = 0;
-    mat[15] = 1;
-    
-}
-
-inline static float matrix_multiply_dot (int row_index, int col_index, const mat4 * a, const mat4 * b)
-{
     const fvec * row = (*a) + row_index;
     const fvec * col = (*b) + 4 * col_index;
 
-    /*log_normal ("(%d,%d) [%f, %f, %f, %f] * [%f, %f, %f, %f]",
-		row_index,
-		col_index,
-		row[0],
-		row[4],
-		row[8],
-		row[12],
-		col[0],
-		col[1],
-		col[2],
-		col[3]);*/
     
     return
 	+ row[0] * col[0]
 	+ row[4] * col[1]
 	+ row[8] * col[2]
 	+ row[12] * col[3];
+}*/
+
+#define mat4_dot_column_vec(a, member, v)			\
+    + (a).column[0].member * (v).x				\
+    + (a).column[1].member * (v).y				\
+    + (a).column[2].member * (v).z				\
+    + (a).column[3].member * (v).w
+
+#define mat4_dot_column(a, v)		\
+	.x = mat4_dot_column_vec(a, x, v),	\
+	    .y = mat4_dot_column_vec(a, y, v),	\
+	    .z = mat4_dot_column_vec(a, z, v),	\
+	    .w = mat4_dot_column_vec(a, w, v)
+
+void mat4_multiply_column_vec (fvec4 * result, const mat4 * a, const fvec4 * b)
+{
+    *result = (fvec4){ mat4_dot_column(*a, *b) };
 }
 
 void mat4_multiply (mat4 * result, const mat4 * a, const mat4 * b)
 {
-#define mat4_multiply_column(n)					\
-    (*result)[0 + 4 * n] = matrix_multiply_dot(n, 0, a, b);	\
-    (*result)[1 + 4 * n] = matrix_multiply_dot(n, 1, a, b);	\
-    (*result)[2 + 4 * n] = matrix_multiply_dot(n, 2, a, b);	\
-    (*result)[3 + 4 * n] = matrix_multiply_dot(n, 3, a, b);
-
-    mat4_multiply_column(0);
-    mat4_multiply_column(1);
-    mat4_multiply_column(2);
-    mat4_multiply_column(3);
-
-    mat4_transpose(result); // why
+    *result = (mat4)
+	{
+	    .column =
+	    {
+		{ mat4_dot_column(*a, b->column[0]) },
+		{ mat4_dot_column(*a, b->column[1]) },
+		{ mat4_dot_column(*a, b->column[2]) },
+		{ mat4_dot_column(*a, b->column[3]) },
+	    }
+	};
 }
 
 void mat4_transpose (mat4 * a)
@@ -285,8 +268,8 @@ void mat4_transpose (mat4 * a)
     {
 	for (int y = 0; y < x; y++)
 	{
-	    xp = (*a) + 4 * x + y;
-	    yp = (*a) + 4 * y + x;
+	    xp = a->column[x].index + y;
+	    yp = a->column[y].index + x;
 
 	    //log_debug("1 %f %f", *xp, *yp);
 	    tmp = *xp;
@@ -315,36 +298,16 @@ void mat4_transpose (mat4 * a)
   }
 */
 
-void mat4_setup_identity_matrix (mat4 * a)
+void mat4_setup_identity_matrix (mat4 * target)
 {
-    (*a)[0] = 1;
-    (*a)[1] = 0;
-    (*a)[2] = 0;
-    (*a)[3] = 0;
-    
-    (*a)[4] = 0;
-    (*a)[5] = 1;
-    (*a)[6] = 0;
-    (*a)[7] = 0;
-    
-    (*a)[8] = 0;
-    (*a)[9] = 0;
-    (*a)[10] = 1;
-    (*a)[11] = 0;
-    
-    (*a)[12] = 0;
-    (*a)[13] = 0;
-    (*a)[14] = 0;
-    (*a)[15] = 1;
-}
-
-void mat4_multiply_right_vec (fvec4 * result, const mat4 * a, const fvec4 * b)
-{
-#define right_vec_dot(i)						\
-    (*a)[0 + i] * b->x + (*a)[4 + i] * b->y + (*a)[8 + i] * b->z + (*a)[12 + i] * b->w
-
-    result->x = right_vec_dot(0);
-    result->y = right_vec_dot(1);
-    result->z = right_vec_dot(2);
-    result->w = right_vec_dot(3);
+    *target = (mat4)
+    {
+	.column =
+	{
+	    { .x = 1 },
+	    { .y = 1 },
+	    { .z = 1 },
+	    { .w = 1 },
+	}
+    };
 }

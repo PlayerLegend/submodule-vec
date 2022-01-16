@@ -1,9 +1,9 @@
 #include <math.h>
+#include <assert.h>
 #define FLAT_INCLUDES
 #include "../vec.h"
 #include "../vec2.h"
 #include "../vec3.h"
-#include "../../debug/debug.h"
 
 /*fvec fabs(fvec f)
 {
