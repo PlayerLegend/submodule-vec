@@ -20,15 +20,15 @@ void view_normals_setup (view_normals * target, const fvec4 * quaternion)
     fvec4 out;
 
     in = (fvec4) { .x = 1, .w = 1 };
-    mat4_multiply_right_vec(&out, &rotation_matrix, &in);
+    mat4_multiply_column_vec(&out, &rotation_matrix, &in);
     target->right = (fvec3){ .x = out.x, .y = out.y, .z = out.z };
     
     in = (fvec4) { .y = 1, .w = 1 };
-    mat4_multiply_right_vec(&out, &rotation_matrix, &in);
+    mat4_multiply_column_vec(&out, &rotation_matrix, &in);
     target->up = (fvec3){ .x = out.x, .y = out.y, .z = out.z };
     
     in = (fvec4) { .z = 1, .w = 1 };
-    mat4_multiply_right_vec(&out, &rotation_matrix, &in);
+    mat4_multiply_column_vec(&out, &rotation_matrix, &in);
     target->forward = (fvec3){ .x = out.x, .y = out.y, .z = out.z };
 }
 

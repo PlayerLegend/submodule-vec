@@ -6,8 +6,9 @@
 #include "../keyargs/keyargs.h"
 #endif
 
-typedef struct {
+typedef union {
     fvec4 column[4];
+    fvec index[16];
 }
     mat4;
 
