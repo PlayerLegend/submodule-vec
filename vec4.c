@@ -123,3 +123,56 @@ fvec vec4_quaternion_roll_mod (const fvec4 * q)
 	return roll;
     }
 }
+
+void vec4_hamiltonian_product (fvec4 * result, const fvec4 * a, const fvec4 * b)
+{
+    *result = (fvec4)
+	{
+	    .w = a->w * b->w - a->x * b->x - a->y * b->y - a->z * b->z,
+	    .x = a->w * b->x + a->x * b->w + a->y * b->z - a->z * b->y,
+	    .y = a->w * b->y - a->x * b->z + a->y * b->w + a->z * b->x,
+	    .z = a->w * b->z + a->x * b->y - a->y * b->x + a->z * b->w,
+        };
+}
+
+void vec4_quaternion_rotate (fvec3 * output, const fvec4 * q_quaternion, const fvec3 * input)
+{
+    fvec4 v_target = { .alias_vec3 = *input };
+    
+    fvec4 c_compliment =
+	{
+	    .w = q_quaternion->w,
+	    .x = -q_quaternion->x,
+	    .y = -q_quaternion->y,
+	    .z = -q_quaternion->z,
+	};
+
+    fvec4 qv_hamiltonian;
+    vec4_hamiltonian_product(&qv_hamiltonian, q_quaternion, &v_target);
+
+    fvec4 qvc_hamiltonian;
+    vec4_hamiltonian_product(&qvc_hamiltonian, &qv_hamiltonian, &c_compliment);
+
+    *output = qvc_hamiltonian.alias_vec3;
+}
+
+void vec4_quaternion_unrotate (fvec3 * output, const fvec4 * q_quaternion, const fvec3 * input)
+{
+    fvec4 v_target = { .alias_vec3 = *input };
+    
+    fvec4 c_compliment =
+	{
+	    .w = q_quaternion->w,
+	    .x = -q_quaternion->x,
+	    .y = -q_quaternion->y,
+	    .z = -q_quaternion->z,
+	};
+
+    fvec4 cv_hamiltonian;
+    vec4_hamiltonian_product(&cv_hamiltonian, &c_compliment, &v_target);
+
+    fvec4 cvq_hamiltonian;
+    vec4_hamiltonian_product(&cvq_hamiltonian, &cv_hamiltonian, q_quaternion);
+
+    *output = cvq_hamiltonian.alias_vec3;
+}

@@ -15,6 +15,9 @@
 #define vec3_initializer(a) { (a).x, (a).y, (a).z }
 #define vec3_scale_init(a,s) { (a).x * (s), (a).y * (s), (a).z * (s) }
 
+#define VEC3_FORMSPEC "%f %f %f"
+#define VEC3_FORMSPEC_ARG(v) (v).x, (v).y, (v).z
+
 typedef vec3(ivec) ivec3;
 typedef vec3(fvec) fvec3;
 
