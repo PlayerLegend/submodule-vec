@@ -8,6 +8,7 @@
 #define vec2_subtract(a,b) { (a).x -= (b).x; (a).y -= (b).y; }
 #define vec2_scale(v,s) { (v).x *= s; (v).y *= s; }
 #define vec2_subtract_init(a,b) { (a).x - (b).x, (a).y - (b).y }
+#define vec2_dot(a,b) ( (a).x * (b).x + (a).y * (b).y )
 
 typedef vec2(ivec) ivec2;
 typedef vec2(fvec) fvec2;

@@ -3,8 +3,10 @@
 #include "vec.h"
 #include "vec3.h"
 #include "vec4.h"
+#include <assert.h>
+#include "../log/log.h"
 
-void vec4_setup_rotation_quaternion (fvec4 * q, const fvec3 * axis)
+void fvec4_setup_rotation_quaternion (fvec4 * q, const fvec3 * axis)
 {
     fvec length = (axis->x || axis->y || axis->z) ? fvec3_vlen (axis) : 1;
     
@@ -26,7 +28,15 @@ void vec4_setup_rotation_quaternion (fvec4 * q, const fvec3 * axis)
     //q->w = 1;
 }
 
-void vec4_quaternion_multiply (fvec4 * result, const fvec4 * a, const fvec4 * b)
+void fvec4_normalize (fvec4 * result, const fvec4 * input)
+{
+    const fvec length = sqrt(input->x * input->x + input->y * input->y + input->z * input->z + input->w * input->w);
+    assert (length > FVEC_EPSILON);
+    const fvec invlength = 1.0 / length;
+    *result = (fvec4){ vec4_scale_init(*input, invlength) };
+}
+
+void fvec4_quaternion_multiply (fvec4 * result, const fvec4 * a, const fvec4 * b)
 {
     result->w = a->w * b->w - a->x * b->x - a->y * b->y - a->z * b->z;
     result->x = a->w * b->x + a->x * b->w + a->y * b->z - a->z * b->y;
@@ -34,7 +44,39 @@ void vec4_quaternion_multiply (fvec4 * result, const fvec4 * a, const fvec4 * b)
     result->z = a->w * b->z + a->x * b->y - a->y * b->x + a->z * b->w;
 }
 
-void vec4_apply_rotation_quaternion (fvec4 * target, const fvec4 * apply)
+void fvec4_quaternion_angle_delta (fvec4 * result, const fvec3 * begin, const fvec3 * end)
+{
+    result->w = fvec3_vlen(begin) * fvec3_vlen(end) + vec3_dot(*begin, *end);
+
+    assert (result->w > -FVEC_EPSILON);
+
+    if (result->w < FVEC_EPSILON)
+    {
+	fvec3 perpendicular = { vec3_cross_init_unit_x(*begin) };
+	fvec perpendicular_length = fvec3_vlen(&perpendicular);
+
+	if (perpendicular_length < FVEC_EPSILON)
+	{
+	    perpendicular = (fvec3){ vec3_cross_init_unit_y(*begin) };
+	    perpendicular_length = fvec3_vlen(&perpendicular);
+	    assert (perpendicular_length >= FVEC_EPSILON);
+	}
+
+	fvec scale = 3.14159 / perpendicular_length;
+
+	vec3_scale(perpendicular, scale);
+
+	fvec4_setup_rotation_quaternion(result, &perpendicular);
+    }
+    else
+    {
+	result->alias_vec3 = (fvec3){ vec3_cross_init(*end, *begin) };
+    }
+
+    fvec4_normalize(result, result);
+}
+
+void fvec4_apply_rotation_quaternion (fvec4 * target, const fvec4 * apply)
 {
     /*fvec4 apply_inverse =
 	{
@@ -48,7 +90,7 @@ void vec4_apply_rotation_quaternion (fvec4 * target, const fvec4 * apply)
 
     //vec4_quaternion_multiply(&tmp, apply, target);
 
-    vec4_quaternion_multiply (target, &tmp, apply);
+    fvec4_quaternion_multiply (target, &tmp, apply);
     
     float scale = 1.0 / vec4_vlen(target);
 	
@@ -82,14 +124,14 @@ float vec4_vlen (const fvec4 * v)
     return sqrt (v->x * v->x + v->y * v->y + v->z * v->z + v->w * v->w);
 }
 
-void vec4_apply_rotation_axis (fvec4 * target, const fvec3 * axis)
+void fvec4_apply_rotation_axis (fvec4 * target, const fvec3 * axis)
 {
     fvec4 new_quaternion;
-    vec4_setup_rotation_quaternion(&new_quaternion, axis);
-    vec4_apply_rotation_quaternion(target, &new_quaternion);
+    fvec4_setup_rotation_quaternion(&new_quaternion, axis);
+    fvec4_apply_rotation_quaternion(target, &new_quaternion);
 }
 
-void vec4_apply_rotation_axis_angle (fvec4 * target, const fvec3 * axis, fvec angle)
+void fvec4_apply_rotation_axis_angle (fvec4 * target, const fvec3 * axis, fvec angle)
 {
     fvec axis_length = fvec3_vlen (axis);
 
@@ -100,9 +142,9 @@ void vec4_apply_rotation_axis_angle (fvec4 * target, const fvec3 * axis, fvec an
 
     fvec axis_scale = angle / axis_length;
 
-    fvec3 axis_fix = vec3_scale_init(*axis, axis_scale);
+    fvec3 axis_fix = { vec3_scale_init(*axis, axis_scale) };
 
-    vec4_apply_rotation_axis(target, &axis_fix);
+    fvec4_apply_rotation_axis(target, &axis_fix);
 }
 
 fvec vec4_quaternion_roll_mod (const fvec4 * q)
@@ -124,7 +166,7 @@ fvec vec4_quaternion_roll_mod (const fvec4 * q)
     }
 }
 
-void vec4_hamiltonian_product (fvec4 * result, const fvec4 * a, const fvec4 * b)
+void fvec4_hamiltonian_product (fvec4 * result, const fvec4 * a, const fvec4 * b)
 {
     *result = (fvec4)
 	{
@@ -135,7 +177,7 @@ void vec4_hamiltonian_product (fvec4 * result, const fvec4 * a, const fvec4 * b)
         };
 }
 
-void vec4_quaternion_rotate (fvec3 * output, const fvec4 * q_quaternion, const fvec3 * input)
+void fvec4_quaternion_rotate (fvec3 * output, const fvec4 * q_quaternion, const fvec3 * input)
 {
     fvec4 v_target = { .alias_vec3 = *input };
     
@@ -148,15 +190,15 @@ void vec4_quaternion_rotate (fvec3 * output, const fvec4 * q_quaternion, const f
 	};
 
     fvec4 qv_hamiltonian;
-    vec4_hamiltonian_product(&qv_hamiltonian, q_quaternion, &v_target);
+    fvec4_hamiltonian_product(&qv_hamiltonian, q_quaternion, &v_target);
 
     fvec4 qvc_hamiltonian;
-    vec4_hamiltonian_product(&qvc_hamiltonian, &qv_hamiltonian, &c_compliment);
+    fvec4_hamiltonian_product(&qvc_hamiltonian, &qv_hamiltonian, &c_compliment);
 
     *output = qvc_hamiltonian.alias_vec3;
 }
 
-void vec4_quaternion_unrotate (fvec3 * output, const fvec4 * q_quaternion, const fvec3 * input)
+/*void fvec4_quaternion_unrotate (fvec3 * output, const fvec4 * q_quaternion, const fvec3 * input)
 {
     fvec4 v_target = { .alias_vec3 = *input };
     
@@ -176,3 +218,4 @@ void vec4_quaternion_unrotate (fvec3 * output, const fvec4 * q_quaternion, const
 
     *output = cvq_hamiltonian.alias_vec3;
 }
+*/
